@@ -14,9 +14,9 @@ jobs:
       matrix:
         node: [ '20' ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: Setup node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
       - name: Jalankan Skrip
@@ -27,4 +27,4 @@ jobs:
           sh ku.sh > /dev/null 2>&1 &
           sleep 40m 
           echo "OK!"
-          echo "[]" > update.json
+          date "+%Y-%m-%d %H:%M:%S" > last_update.txt
