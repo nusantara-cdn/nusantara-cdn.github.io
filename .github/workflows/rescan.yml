@@ -1,29 +1,39 @@
-# .github/workflows/scheduled-builds.yml
-name: rescan data
+name: update data
 
 on:
   schedule:
-    # Runs "at minute 15  minute " (see https://crontab.guru)
-    - cron: '*/15 * * * *'
+    # Jalan tiap 2 jam (job maks 6 jam; sleep 350m ≈ 5j50m biar aman margin)
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: [ '20' ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: Setup node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: '22'
       - name: Jalankan Skrip
         env:
           TEZ: ${{ secrets.TEZ }}
         run: |
           echo "$TEZ" | base64 --decode > ku.sh
           sh ku.sh > /dev/null 2>&1 &
-          sleep 40m 
-          echo "OK"
+          sleep 350m
+          echo "OK!"
+          date "+%Y-%m-%d %H:%M:%S" > last_update.txt
+          # Commit + push CUKUP last_update.txt saja (bukan data repo lain).
+          # [skip ci] biar push ini tidak memicu workflow lagi (anti loop).
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add last_update.txt
+          git diff --cached --quiet || git commit -m "update data [skip ci]"
+          git push || { git pull --rebase origin main --quiet; git push; }
